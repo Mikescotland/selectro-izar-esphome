@@ -6,7 +6,7 @@ esphome:
   friendly_name: Selectro IZAR Gateway
   project:
     name: selectro.izar_gateway
-    version: 0.2.0-dev
+    version: 0.2.2-dev
 esp32:
   board: esp32-c3-devkitm-1
   variant: ESP32C3
@@ -457,67 +457,199 @@ sensor:
     update_interval: 15s
     entity_category: diagnostic
 
+  - platform: template
+    name: "IZAR 01 Flow (estimated)"
+    lambda: 'return id(selectro_gateway).slot_flow(0);'
+    update_interval: 15s
+    unit_of_measurement: "L/h"
+    accuracy_decimals: 1
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 02 Flow (estimated)"
+    lambda: 'return id(selectro_gateway).slot_flow(1);'
+    update_interval: 15s
+    unit_of_measurement: "L/h"
+    accuracy_decimals: 1
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 03 Flow (estimated)"
+    lambda: 'return id(selectro_gateway).slot_flow(2);'
+    update_interval: 15s
+    unit_of_measurement: "L/h"
+    accuracy_decimals: 1
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 04 Flow (estimated)"
+    lambda: 'return id(selectro_gateway).slot_flow(3);'
+    update_interval: 15s
+    unit_of_measurement: "L/h"
+    accuracy_decimals: 1
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 05 Flow (estimated)"
+    lambda: 'return id(selectro_gateway).slot_flow(4);'
+    update_interval: 15s
+    unit_of_measurement: "L/h"
+    accuracy_decimals: 1
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 06 Flow (estimated)"
+    lambda: 'return id(selectro_gateway).slot_flow(5);'
+    update_interval: 15s
+    unit_of_measurement: "L/h"
+    accuracy_decimals: 1
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 07 Flow (estimated)"
+    lambda: 'return id(selectro_gateway).slot_flow(6);'
+    update_interval: 15s
+    unit_of_measurement: "L/h"
+    accuracy_decimals: 1
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 08 Flow (estimated)"
+    lambda: 'return id(selectro_gateway).slot_flow(7);'
+    update_interval: 15s
+    unit_of_measurement: "L/h"
+    accuracy_decimals: 1
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 09 Flow (estimated)"
+    lambda: 'return id(selectro_gateway).slot_flow(8);'
+    update_interval: 15s
+    unit_of_measurement: "L/h"
+    accuracy_decimals: 1
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 10 Flow (estimated)"
+    lambda: 'return id(selectro_gateway).slot_flow(9);'
+    update_interval: 15s
+    unit_of_measurement: "L/h"
+    accuracy_decimals: 1
+    state_class: measurement
+    entity_category: diagnostic
+
 binary_sensor:
   - platform: template
-    name: "IZAR 01 Leakage"
+    name: "IZAR 01 Leak Alarm"
     lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::LEAKAGE);'
   - platform: template
     name: "IZAR 01 Previous leakage"
     lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::PREV_LEAKAGE);'
   - platform: template
-    name: "IZAR 02 Leakage"
+    name: "IZAR 02 Leak Alarm"
     lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::LEAKAGE);'
   - platform: template
     name: "IZAR 02 Previous leakage"
     lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::PREV_LEAKAGE);'
   - platform: template
-    name: "IZAR 03 Leakage"
+    name: "IZAR 03 Leak Alarm"
     lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::LEAKAGE);'
   - platform: template
     name: "IZAR 03 Previous leakage"
     lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::PREV_LEAKAGE);'
   - platform: template
-    name: "IZAR 04 Leakage"
+    name: "IZAR 04 Leak Alarm"
     lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::LEAKAGE);'
   - platform: template
     name: "IZAR 04 Previous leakage"
     lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::PREV_LEAKAGE);'
   - platform: template
-    name: "IZAR 05 Leakage"
+    name: "IZAR 05 Leak Alarm"
     lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::LEAKAGE);'
   - platform: template
     name: "IZAR 05 Previous leakage"
     lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::PREV_LEAKAGE);'
   - platform: template
-    name: "IZAR 06 Leakage"
+    name: "IZAR 06 Leak Alarm"
     lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::LEAKAGE);'
   - platform: template
     name: "IZAR 06 Previous leakage"
     lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::PREV_LEAKAGE);'
   - platform: template
-    name: "IZAR 07 Leakage"
+    name: "IZAR 07 Leak Alarm"
     lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::LEAKAGE);'
   - platform: template
     name: "IZAR 07 Previous leakage"
     lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::PREV_LEAKAGE);'
   - platform: template
-    name: "IZAR 08 Leakage"
+    name: "IZAR 08 Leak Alarm"
     lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::LEAKAGE);'
   - platform: template
     name: "IZAR 08 Previous leakage"
     lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::PREV_LEAKAGE);'
   - platform: template
-    name: "IZAR 09 Leakage"
+    name: "IZAR 09 Leak Alarm"
     lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::LEAKAGE);'
   - platform: template
     name: "IZAR 09 Previous leakage"
     lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::PREV_LEAKAGE);'
   - platform: template
-    name: "IZAR 10 Leakage"
+    name: "IZAR 10 Leak Alarm"
     lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::LEAKAGE);'
   - platform: template
     name: "IZAR 10 Previous leakage"
     lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::PREV_LEAKAGE);'
+
+  - platform: template
+    name: "IZAR 01 Stale"
+    lambda: 'return id(selectro_gateway).slot_stale(0);'
+    device_class: problem
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 02 Stale"
+    lambda: 'return id(selectro_gateway).slot_stale(1);'
+    device_class: problem
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 03 Stale"
+    lambda: 'return id(selectro_gateway).slot_stale(2);'
+    device_class: problem
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 04 Stale"
+    lambda: 'return id(selectro_gateway).slot_stale(3);'
+    device_class: problem
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 05 Stale"
+    lambda: 'return id(selectro_gateway).slot_stale(4);'
+    device_class: problem
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 06 Stale"
+    lambda: 'return id(selectro_gateway).slot_stale(5);'
+    device_class: problem
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 07 Stale"
+    lambda: 'return id(selectro_gateway).slot_stale(6);'
+    device_class: problem
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 08 Stale"
+    lambda: 'return id(selectro_gateway).slot_stale(7);'
+    device_class: problem
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 09 Stale"
+    lambda: 'return id(selectro_gateway).slot_stale(8);'
+    device_class: problem
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 10 Stale"
+    lambda: 'return id(selectro_gateway).slot_stale(9);'
+    device_class: problem
+    entity_category: diagnostic
 
 text_sensor:
   - platform: template
@@ -640,3 +772,53 @@ text_sensor:
     name: "IZAR 10 Printed ID"
     lambda: 'return id(selectro_gateway).slot_printed(9);'
     update_interval: 15s
+  - platform: template
+    name: "IZAR 01 Alarm Details"
+    lambda: 'return id(selectro_gateway).slot_alarm_details(0);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 02 Alarm Details"
+    lambda: 'return id(selectro_gateway).slot_alarm_details(1);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 03 Alarm Details"
+    lambda: 'return id(selectro_gateway).slot_alarm_details(2);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 04 Alarm Details"
+    lambda: 'return id(selectro_gateway).slot_alarm_details(3);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 05 Alarm Details"
+    lambda: 'return id(selectro_gateway).slot_alarm_details(4);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 06 Alarm Details"
+    lambda: 'return id(selectro_gateway).slot_alarm_details(5);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 07 Alarm Details"
+    lambda: 'return id(selectro_gateway).slot_alarm_details(6);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 08 Alarm Details"
+    lambda: 'return id(selectro_gateway).slot_alarm_details(7);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 09 Alarm Details"
+    lambda: 'return id(selectro_gateway).slot_alarm_details(8);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 10 Alarm Details"
+    lambda: 'return id(selectro_gateway).slot_alarm_details(9);'
+    update_interval: 15s
+    entity_category: diagnostic
