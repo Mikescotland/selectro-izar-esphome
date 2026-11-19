@@ -1,0 +1,11 @@
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const c=fs.readFileSync('components/selectro_izar/selectro_izar.cpp','utf8');
+const h=fs.readFileSync('components/selectro_izar/portal.html','utf8');
+assert.match(c,/AP_FIRST_WIFI_PREF_KEY=88491487u/);
+assert.match(c,/nvs_erase_key\(global_preferences->nvs_handle,key\)/);
+assert.match(c,/global_preferences->reset\(\)/);
+assert.match(c,/req->authenticate\(admin_username_/);
+assert.match(c,/pending_reset_\.store\(action/);
+assert.match(h,/Reset Wi-Fi only/);assert.match(h,/Factory reset/);
+assert.match(h,/RESET_WIFI/);assert.match(h,/ERASE_ALL/);
+console.log('MAINTENANCE SOURCE TESTS PASSED');

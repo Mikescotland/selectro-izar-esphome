@@ -6,6 +6,7 @@ static const char SELECTRO_PORTAL_HTML[] = R"_SELUI_(<!doctype html><html lang="
 <div class="twocol"><div class="panel"><h2>Assign a meter</h2><form id="form"><div class="field"><label>Slot (1–10)</label><select name="slot" id="slot"></select></div><div class="field" style="margin-top:12px"><label>Radio ID or printed meter number</label><input id="id" name="id" maxlength="16" placeholder="219A769B or T26WA900123" required></div><div class="field" style="margin-top:12px"><label>Label (optional)</label><input name="name" maxlength="23" placeholder="Kitchen / Bathroom"></div><div class="field" style="margin-top:12px"><label>Custom PRIOS key (optional, 16 hex digits)</label><input type="password" name="key" minlength="16" maxlength="16" pattern="[0-9a-fA-F]{16}" placeholder="Default keys work for most meters" autocomplete="off"></div><label class="small"><input type="checkbox" name="clear_key" value="1"> Remove any previously stored custom key</label><p class="note">A blank key uses the factory PRIOS keys for new assignments, and preserves any previously stored custom key for the same meter. This firmware does <b>not</b> decode AES-128 encrypted OMS frames. Custom keys are stored locally; they are never returned by the web API.</p><button type="submit" style="width:100%">Save assignment</button><div id="toast"></div></form></div>
 <div class="panel"><h2>Assigned meters</h2><div id="slots"></div><p class="note" style="margin-top:12px">Each slot appears as fixed ESPHome entities in Home Assistant. If you replace a meter in a slot, its entity history may refer to two different meters; avoid reusing slots unnecessarily.</p></div></div>
 <div class="panel"><h2>Alarm flags and flow</h2><p class="note">Alarm Details shows all decoded status flags, including SENSOR_FRAUD, MECHANICAL_FRAUD, BACK_FLOW, UNDERFLOW and OVERFLOW; stale readings never report OK. Leak Alarm comes directly from the telegram. Flow (estimated) in L/h is calculated from successive total readings; the sample SAP/00/07 telegram does not transmit instantaneous flow.</p></div>
+<div class="panel"><h2>Maintenance</h2><p class="note">Reset Wi-Fi only removes your saved home Wi-Fi and preserves all ten water meter assignments and PRIOS keys. Factory reset erases all stored ESPHome user preferences (Wi-Fi, meter assignments and keys) but not firmware or compiled passwords.</p><div class="row"><button type="button" class="secondary" onclick="resetWifi()">Reset Wi-Fi only</button><button type="button" class="danger" onclick="factoryReset()">Factory reset</button></div><div id="maintenanceToast" class="note" role="status" aria-live="polite"></div></div>
 <div class="panel"><h2>Connection and safety</h2><div class="note">The gateway receives only T1 PRIOS frames that pass the radio CRC and PRIOS check byte. A meter with an unknown key or unsupported format is listed as “not decoded”, never as 0 m³. Protect access to this page using a unique web password and your Wi-Fi network. For the ESPHome device page and OTA, visit the <a href="/" style="color:#b6d6cb">built-in ESPHome interface</a>.</div></div>
 </main><script>
 const el=id=>document.getElementById(id);let state=null;const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -34,6 +35,20 @@ async function send(values){const r=await fetch('/selectro/api/slot',{method:'PO
 el('form').addEventListener('submit',async ev=>{ev.preventDefault();let f=ev.target;try{await send({action:'bind',slot:el('slot').value,id:el('id').value.trim(),name:f.elements.name.value.trim(),key:f.elements.key.value.trim(),clear_key:f.elements.clear_key.checked?"1":"0"});el('toast').innerHTML='<span class="ok">Saved to device flash.</span>';f.elements.key.value='';await refresh()}catch(ex){el('toast').innerHTML='<span class="bad">'+e(ex.message)+'</span>'}});
 async function removeSlot(i){if(!confirm('Remove this assignment from slot '+(i+1)+'?'))return;try{await send({action:'remove',slot:i});await refresh()}catch(ex){alert(ex.message)}}
 el('slot').addEventListener('change',()=>{slotTouched=true;});
+async function maintenance(path,confirmation){
+ const target=el('maintenanceToast');
+ const entry=prompt('Type '+confirmation+' to confirm:');
+ if(entry===null)return;
+ if(entry!==confirmation){target.textContent='Confirmation incorrect; nothing changed.';return;}
+ try{
+  const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({confirm:confirmation})});
+  const x=await r.json();
+  if(!r.ok||!x.ok)throw Error(x.error||'Reset refused');
+  target.textContent='Reset scheduled. The device will reboot. For Wi-Fi reset reconnect to Selectro IZAR Setup (192.168.4.1).';
+ }catch(err){target.textContent='Reset failed: '+err.message;}
+}
+async function resetWifi(){await maintenance('/selectro/api/reset_wifi','RESET_WIFI');}
+async function factoryReset(){await maintenance('/selectro/api/factory_reset','ERASE_ALL');}
 el('reading').addEventListener('input',render);el('tolerance').addEventListener('change',render);refresh();setInterval(refresh,10000);
 </script></body></html>
 )_SELUI_";

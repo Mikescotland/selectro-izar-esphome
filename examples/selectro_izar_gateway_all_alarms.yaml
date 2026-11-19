@@ -6,7 +6,7 @@ esphome:
   friendly_name: Selectro IZAR Gateway
   project:
     name: selectro.izar_gateway
-    version: 0.2.2-dev
+    version: 0.2.3-dev
 esp32:
   board: esp32-c3-devkitm-1
   variant: ESP32C3
@@ -49,6 +49,8 @@ wmbus_common:
   drivers: [izar]
 selectro_izar:
   id: selectro_gateway
+  admin_username: !secret web_username
+  admin_password: !secret web_password
 wmbus_radio:
   radio_type: CC1101
   cs_pin: GPIO7

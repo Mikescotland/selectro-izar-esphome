@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <atomic>
 #include <cstdint>
 #include <mutex>
 #include <string>
@@ -23,9 +24,10 @@ class Gateway final : public Component, public AsyncWebHandler {
  public:
   void setup() override;
   void dump_config() override;
-  void loop() override {}
+  void loop() override;
   float get_setup_priority() const override { return setup_priority::AFTER_WIFI; }
   bool handle_packet(const std::vector<uint8_t> &frame, int8_t rssi);
+  void set_admin_credentials(const std::string &user,const std::string &pass) { admin_username_=user;admin_password_=pass; }
 
   optional<float> slot_total(unsigned i) const;
   optional<float> slot_flow(unsigned i) const;
@@ -79,6 +81,10 @@ class Gateway final : public Component, public AsyncWebHandler {
   ESPPreferenceObject pref_{};
   uint32_t rx_count_{0};
   uint32_t decoded_count_{0};
+  std::atomic<uint8_t> pending_reset_{0}; // 1: Wi-Fi only, 2: all NVS
+  std::atomic<uint32_t> reset_due_ms_{0};
+  std::string admin_username_{};
+  std::string admin_password_{};
   const Found *find_unsafe_(uint32_t id) const;
   static uint32_t checksum_(const Storage &s);
   void save_unsafe_();
@@ -87,6 +93,8 @@ class Gateway final : public Component, public AsyncWebHandler {
   static std::string id_to_string_(uint32_t id);
   static bool parse_id_(const std::string &s, uint32_t *id);
   void bind_(AsyncWebServerRequest *req);
+  void request_reset_(AsyncWebServerRequest *req,uint8_t action);
+  bool erase_saved_wifi_();
 };
 
 } } // namespace

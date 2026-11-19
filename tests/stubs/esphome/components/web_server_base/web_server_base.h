@@ -11,6 +11,8 @@ struct AsyncWebServerRequest{
  int method()const{return HTTP_GET;}
  StringRef url_to(std::span<char, URL_BUF_SIZE>)const{return {};}
  std::string arg(const char*)const{return {};}
+ bool authenticate(const char*,const char*)const{return true;}
+ void requestAuthentication()const{}
  Response* beginResponse(int,const char*,const std::string&){static Response r;return &r;}
  void send(Response*){}
  void send(int,const char*,const char*){}

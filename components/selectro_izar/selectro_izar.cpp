@@ -6,6 +6,11 @@
 #include <cstring>
 #include <cstdlib>
 #include <inttypes.h>
+#ifdef USE_ESP32
+#include "esphome/core/application.h"
+#include <nvs.h>
+#include <esp_err.h>
+#endif
 
 namespace esphome { namespace selectro_izar {
 static const char *TAG = "selectro_izar";
@@ -13,6 +18,9 @@ static constexpr uint32_t CONFIG_MAGIC=0x53495A47u; // 'SIZG'
 static constexpr uint32_t CONFIG_VERSION=1u;
 static constexpr uint32_t STALE_MS=30u*60u*1000u;
 static constexpr uint32_t FLOW_STALE_MS=3u*60u*1000u;
+// ESPHome 2026.10.2 Wi-Fi saved-STA preference key with AP-only YAML.
+static constexpr uint32_t AP_FIRST_WIFI_PREF_KEY=88491487u;
+static constexpr uint32_t RESET_RESPONSE_GRACE_MS=1800u;
 
 uint32_t Gateway::checksum_(const Storage &s) {
   const auto *p=reinterpret_cast<const uint8_t*>(&s);
@@ -36,6 +44,71 @@ void Gateway::setup() {
     web_server_base::global_web_server_base->add_handler(this);
   else ESP_LOGE(TAG,"No web_server_base; Selectro portal unavailable");
 }
+// Erase only saved Wi-Fi credentials, preserving Selectro's assigned meter slots.
+// Requires AP-first YAML with no statically configured home SSID.
+bool Gateway::erase_saved_wifi_() {
+#ifdef USE_ESP32
+  if (!global_preferences || !global_preferences->sync()) {
+    ESP_LOGE(TAG,"Wi-Fi reset: unable to sync preferences");
+    return false;
+  }
+  if (!global_preferences->nvs_handle) {
+    ESP_LOGE(TAG,"Wi-Fi reset: no NVS handle");
+    return false;
+  }
+  char key[16]{};
+  std::snprintf(key,sizeof(key),"%" PRIu32,AP_FIRST_WIFI_PREF_KEY);
+  esp_err_t err=nvs_erase_key(global_preferences->nvs_handle,key);
+  if (err!=ESP_OK && err!=ESP_ERR_NVS_NOT_FOUND) {
+    ESP_LOGE(TAG,"Wi-Fi reset: failed to delete Wi-Fi key (%d)",int(err));
+    return false;
+  }
+  err=nvs_commit(global_preferences->nvs_handle);
+  if (err!=ESP_OK) {
+    ESP_LOGE(TAG,"Wi-Fi reset: NVS commit failed (%d)",int(err));
+    return false;
+  }
+  ESP_LOGI(TAG,"Saved Wi-Fi erased; meter assignments preserved");
+  return true;
+#else
+  return false;
+#endif
+}
+
+void Gateway::loop() {
+  const uint8_t action=pending_reset_.load(std::memory_order_acquire);
+  if(!action) return;
+  if(static_cast<int32_t>(millis()-reset_due_ms_.load(std::memory_order_relaxed))<0) return;
+  pending_reset_.store(0,std::memory_order_release);
+  if(action==1) {
+    if(!erase_saved_wifi_()) return;
+  } else if(action==2) {
+    if(!global_preferences || !global_preferences->reset()) {
+      ESP_LOGE(TAG,"Factory reset: preference reset failed");
+      return;
+    }
+    ESP_LOGI(TAG,"Factory reset completed");
+  } else return;
+#ifdef USE_ESP32
+  App.safe_reboot();
+#endif
+}
+
+void Gateway::request_reset_(AsyncWebServerRequest *req,uint8_t action) {
+  const char *expected=(action==1)?"RESET_WIFI":"ERASE_ALL";
+  if(req->arg("confirm")!=expected) {
+    req->send(400,"application/json","{\"ok\":false,\"error\":\"Invalid confirmation\"}");
+    return;
+  }
+  if(pending_reset_.load(std::memory_order_acquire)) {
+    req->send(409,"application/json","{\"ok\":false,\"error\":\"Reset already pending\"}");
+    return;
+  }
+  reset_due_ms_.store(millis()+RESET_RESPONSE_GRACE_MS,std::memory_order_relaxed);
+  pending_reset_.store(action,std::memory_order_release);
+  req->send(202,"application/json","{\"ok\":true,\"status\":\"reset_scheduled\"}");
+}
+
 void Gateway::dump_config() {
   ESP_LOGCONFIG(TAG,"Selectro IZAR Gateway (10 slots, max 40 nearby meters)");
   ESP_LOGCONFIG(TAG,"Open /selectro for setup; API via ESPHome Native API");
@@ -296,11 +369,27 @@ bool Gateway::canHandle(AsyncWebServerRequest *request) const {
   if(method!=HTTP_GET && method!=HTTP_POST)return false;
   char buffer[AsyncWebServerRequest::URL_BUF_SIZE];
   const auto url=request->url_to(buffer);
-  return url=="/selectro" || url=="/selectro/" || url=="/selectro/api/state" || url=="/selectro/api/slot";
+  return url=="/selectro" || url=="/selectro/" || url=="/selectro/api/state" || url=="/selectro/api/slot" || url=="/selectro/api/reset_wifi" || url=="/selectro/api/factory_reset";
 }
 void Gateway::handleRequest(AsyncWebServerRequest *req) {
   char buffer[AsyncWebServerRequest::URL_BUF_SIZE];
   const std::string path=req->url_to(buffer).str();
+  // Custom AsyncWebHandler routes do not inherit the standard web_server authentication.
+  const bool destructive=(path=="/selectro/api/reset_wifi" || path=="/selectro/api/factory_reset");
+  if(!admin_username_.empty() && !admin_password_.empty()) {
+#ifdef USE_WEBSERVER_AUTH
+    if(!req->authenticate(admin_username_.c_str(),admin_password_.c_str())) {
+      req->requestAuthentication();return;
+    }
+#else
+    req->send(503,"application/json","{\"ok\":false,\"error\":\"ESPHome web authentication unavailable\"}");
+    return;
+#endif
+  } else if(destructive) {
+    req->send(403,"application/json","{\"ok\":false,\"error\":\"Configure selectro_izar admin credentials to enable reset\"}");
+    return;
+  }
+
   if(req->method()==HTTP_GET && (path=="/selectro" || path=="/selectro/")) {
     auto *response=req->beginResponse(200,"text/html; charset=utf-8",std::string(SELECTRO_PORTAL_HTML));
     response->addHeader("Cache-Control","no-store");req->send(response);return;
@@ -310,6 +399,8 @@ void Gateway::handleRequest(AsyncWebServerRequest *req) {
     response->addHeader("Cache-Control","no-store");req->send(response);return;
   }
   if(req->method()==HTTP_POST && path=="/selectro/api/slot") {bind_(req);return;}
+  if(req->method()==HTTP_POST && path=="/selectro/api/reset_wifi") {request_reset_(req,1);return;}
+  if(req->method()==HTTP_POST && path=="/selectro/api/factory_reset") {request_reset_(req,2);return;}
   req->send(405,"application/json","{\"ok\":false,\"error\":\"Method not allowed\"}");
 }
 void Gateway::bind_(AsyncWebServerRequest *req) {

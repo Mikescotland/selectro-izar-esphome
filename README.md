@@ -1,4 +1,4 @@
-# Selectro IZAR Gateway v0.2.2 DEV — ESPHome
+# Selectro IZAR Gateway v0.2.3 DEV — ESPHome
 
 **Developer build; not verified on physical board or in a complete ESPHome build.**
 
@@ -60,3 +60,12 @@ external_components:
 Each of the 10 slots exposes: Leak Alarm (binary flag decoded from PRIOS), Stale (binary, 30-minute limit), Radio ID, Printed ID, a distinct Alarm Details text entity listing all decoded flags (including sensor/mechanical fraud, reverse flow, historical flags), and Flow (estimated) in L/h. The /selectro panel retains manual slot selection during discovery refresh. If the assigned meter has no fresh valid frame, Alarm Details returns WAITING_FOR_TELEGRAM, STALE or UNDECODABLE instead of a misleading OK. **Flow (estimated) is calculated from changes in total_m3 and is not an instantaneous flow field transmitted in the supplied SAP/00/07 telegram.**
 
 This is a DEV build. Validate with ESPHome 2026.10.2 and on the actual board before deploying to customers.
+
+
+### Maintenance (v0.2.3 DEV)
+
+Two independent actions are available in the Selectro panel. **Reset Wi-Fi only** removes the saved ESPHome station credential key (88491487, AP-first configuration in ESPHome 2026.10.2), **preserving all ten meter assignments and custom PRIOS keys**. **Factory reset** erases all ESPHome NVS preferences including Wi-Fi and meter slots, but not firmware or build-time passwords. A typed confirmation is required for each POST action. A delayed main-loop reboot is scheduled after the HTTP response.
+
+The custom web handler does **not** inherit authentication from the built-in ESPHome web server. Configure \`selectro_izar.admin_username\` and \`selectro_izar.admin_password\` in YAML (the example uses the same secrets as the regular web server). When omitted, reset endpoints are disabled. Do not expose the DEV device to an untrusted network.
+
+**Not yet tested** by a full ESPHome firmware compile or a real-device reset. Test on disposable configurations first. A physical-button reset has not been added.

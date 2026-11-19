@@ -1,3 +1,10 @@
+# v0.2.3-dev
+
+- Wi-Fi-only reset preserving meter assignments and full factory NVS reset.
+- Typed confirmations and delayed reboot after HTTP response.
+- Explicit admin credentials for custom panel routes; resets disabled without credentials.
+- Host-only checks; hardware validation pending.
+
 # v0.2.2-dev
 
 - Add Alarm Details as a dedicated text sensor for all ten slots, exposing all 11 PRIOS alarm bits and general alarms.
