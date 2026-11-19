@@ -28,5 +28,14 @@ int main(){
  assert(!valid_prios_key(""));assert(!valid_prios_key("00000000000000000000000000000000"));
  auto bad=unhex("1944304C9B769A215C0AA2011800137EEB0118F4C56683190660");bad[16]^=1;
  assert(!decode_izar_prios(bad).valid || decode_izar_prios(bad).total_l!=3222000);
+ IzarReading flags; flags.valid=true;
+ flags.alarms=SENSOR_FRAUD|MECHANICAL_FRAUD|BACK_FLOW|PREV_SENSOR_FRAUD;
+ auto details=alarms_text(flags);
+ assert(details.find("SENSOR_FRAUD") != std::string::npos);
+ assert(details.find("MECHANICAL_FRAUD") != std::string::npos);
+ assert(details.find("BACK_FLOW") != std::string::npos);
+ assert(details.find("PREV_SENSOR_FRAUD") != std::string::npos);
+ flags.alarms=0; assert(alarms_text(flags)=="OK");
+ flags.valid=false; assert(alarms_text(flags)=="decode_error");
  puts("ALL TESTS PASSED");
 }

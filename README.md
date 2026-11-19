@@ -1,4 +1,4 @@
-# Selectro IZAR Gateway v0.2 DEV — ESPHome
+# Selectro IZAR Gateway v0.2.2 DEV — ESPHome
 
 **Developer build; not verified on physical board or in a complete ESPHome build.**
 
@@ -54,3 +54,9 @@ external_components:
 ### Validation
 
 `make test` runs standalone PRIOS regression tests on captured/simulator telegrams. No full ESPHome build verified yet; ESPHome 2026.10.2 validation and hardware test are next gates. Test both active and historical leak flags and an unknown-key telegram.
+
+## v0.2.2 DEV — alarm diagnostics
+
+Each of the 10 slots exposes: Leak Alarm (binary flag decoded from PRIOS), Stale (binary, 30-minute limit), Radio ID, Printed ID, a distinct Alarm Details text entity listing all decoded flags (including sensor/mechanical fraud, reverse flow, historical flags), and Flow (estimated) in L/h. The /selectro panel retains manual slot selection during discovery refresh. If the assigned meter has no fresh valid frame, Alarm Details returns WAITING_FOR_TELEGRAM, STALE or UNDECODABLE instead of a misleading OK. **Flow (estimated) is calculated from changes in total_m3 and is not an instantaneous flow field transmitted in the supplied SAP/00/07 telegram.**
+
+This is a DEV build. Validate with ESPHome 2026.10.2 and on the actual board before deploying to customers.

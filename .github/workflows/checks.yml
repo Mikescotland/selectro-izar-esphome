@@ -10,4 +10,6 @@ jobs:
       - name: C++ decoder regression tests
         run: make test
       - name: Portal JS syntax
-        run: node --check tests/portal_syntax.js
+        run: |
+          node --check tests/portal_syntax.js
+          node tests/test_portal_selection.js

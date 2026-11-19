@@ -12,6 +12,7 @@ jobs:
       - name: Verify portal JavaScript
         run: |
           node --check tests/portal_syntax.js
+          node tests/test_portal_selection.js
       - name: Check component syntax with ESPHome-compatible stubs
         run: g++ -std=c++20 -fsyntax-only -Itests/stubs components/selectro_izar/selectro_izar.cpp components/selectro_izar/izar_decoder.cpp
       - name: Verify YAML structure
@@ -20,5 +21,9 @@ jobs:
           import yaml
           for f in ['examples/selectro_izar_gateway.yaml','examples/selectro_izar_gateway_all_alarms.yaml']:
               with open(f) as file: obj=yaml.safe_load(file.read().replace('!secret ',''))
-              assert len(obj['binary_sensor']) in (20,110)
+              assert len(obj['binary_sensor']) in (30,120)
+              assert len(obj['sensor']) == 70
+              assert len(obj['text_sensor']) == 40
+              for suffix in ('Alarm Details','Radio ID','Printed ID','Leak Alarm','Stale','Flow (estimated)'):
+                  assert sum(item['name'].endswith(' '+suffix) for group in ('sensor','binary_sensor','text_sensor') for item in obj.get(group,[])) == 10, suffix
           PYCODE
