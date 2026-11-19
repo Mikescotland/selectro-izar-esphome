@@ -1,4 +1,4 @@
-# Selectro IZAR Gateway v0.2.3 DEV — ESPHome
+# Selectro IZAR Gateway v0.2.4 DEV — ESPHome
 
 **Developer build; not verified on physical board or in a complete ESPHome build.**
 
