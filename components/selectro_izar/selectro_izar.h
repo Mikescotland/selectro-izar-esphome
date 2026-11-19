@@ -42,6 +42,7 @@ class Gateway final : public Component, public AsyncWebHandler {
   optional<bool> slot_stale(unsigned i) const;
   std::string slot_status(unsigned i) const;
   std::string slot_alarm_details(unsigned i) const;
+  std::string slot_decode_error(unsigned i) const;
   std::string slot_id(unsigned i) const;
 
   bool canHandle(AsyncWebServerRequest *request) const override;

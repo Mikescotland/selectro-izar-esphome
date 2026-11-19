@@ -23,7 +23,7 @@ jobs:
               with open(f) as file: obj=yaml.safe_load(file.read().replace('!secret ',''))
               assert len(obj['binary_sensor']) in (30,120)
               assert len(obj['sensor']) == 70
-              assert len(obj['text_sensor']) == 40
-              for suffix in ('Alarm Details','Radio ID','Printed ID','Leak Alarm','Stale','Flow (estimated)'):
+              assert len(obj['text_sensor']) == 50
+              for suffix in ('Decode Error','Alarm Details','Radio ID','Printed ID','Leak Alarm','Stale','Flow (estimated)'):
                   assert sum(item['name'].endswith(' '+suffix) for group in ('sensor','binary_sensor','text_sensor') for item in obj.get(group,[])) == 10, suffix
           PYCODE

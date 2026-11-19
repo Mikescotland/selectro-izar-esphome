@@ -1,3 +1,10 @@
+# v0.2.4-dev
+
+- Add per-slot Decode Error text entity for 10 slots (`OK`, `UNASSIGNED`, `WAITING_FOR_TELEGRAM`, `STALE` or actual PRIOS error).
+- Update CI expected YAML counts to 150 (compact) and check for per-slot diagnostic consistency.
+- Document troubleshooting when Home Assistant lists only a handful of the firmware's static entities.
+- This does not itself resolve Home Assistant Native API entity discovery; test HA integration reload and built-in ESPHome web UI.
+
 # v0.2.3-dev
 
 - Wi-Fi-only reset preserving meter assignments and full factory NVS reset.

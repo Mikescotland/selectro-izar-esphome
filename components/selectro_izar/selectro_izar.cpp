@@ -274,6 +274,15 @@ std::string Gateway::slot_alarm_details(unsigned i) const {
   IzarReading r; r.valid=true; r.alarms=f->flags; r.general_alarm=f->general_alarm;
   return alarms_text(r);
 }
+std::string Gateway::slot_decode_error(unsigned i) const {
+  std::lock_guard<std::mutex> lk(mutex_);
+  if (i>=MAX_SLOTS || !cfg_.slots[i].id) return "UNASSIGNED";
+  const auto *f=find_unsafe_(cfg_.slots[i].id);
+  if (!f) return "WAITING_FOR_TELEGRAM";
+  if ((uint32_t)(millis()-f->seen_ms)>STALE_MS) return "STALE";
+  if (f->valid) return "OK";
+  return f->error[0] ? std::string(f->error) : "UNDECODABLE";
+}
 std::string Gateway::slot_id(unsigned i) const {
   std::lock_guard<std::mutex> lk(mutex_);
   return (i<MAX_SLOTS && cfg_.slots[i].id)?id_to_string_(cfg_.slots[i].id):"UNASSIGNED";

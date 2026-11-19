@@ -69,3 +69,9 @@ Two independent actions are available in the Selectro panel. **Reset Wi-Fi only*
 The custom web handler does **not** inherit authentication from the built-in ESPHome web server. Configure \`selectro_izar.admin_username\` and \`selectro_izar.admin_password\` in YAML (the example uses the same secrets as the regular web server). When omitted, reset endpoints are disabled. Do not expose the DEV device to an untrusted network.
 
 **Not yet tested** by a full ESPHome firmware compile or a real-device reset. Test on disposable configurations first. A physical-button reset has not been added.
+
+### Native API discovery troubleshooting (v0.2.4-dev)
+
+The compact YAML declares 150 fixed entities (15 per slot) even before meter assignment: 7 sensors, 3 binary sensors, and 5 text sensors for each slot. This includes Radio ID, Printed ID, Alarm Details, and a separate **Decode Error** text sensor (`OK`, `UNASSIGNED`, `WAITING_FOR_TELEGRAM`, `STALE`, or a decoder error). These values are not dynamic entity registrations.
+
+If the `/selectro` panel sees a meter in Slot 2 but Home Assistant shows only the initial four/five entities, compare the built-in ESPHome web server at `http://DEVICE-IP/` (not `/selectro`). If Slot 2 entities are present there, the running firmware has declared the entities and the issue is on Home Assistant integration discovery/registration. Reload the ESPHome integration entry, then check Settings > Devices & services > Entities with disabled/hidden entities included. Do **not** perform a factory reset for this symptom. If the built-in web UI also lacks Slot 2, verify the actual YAML that was compiled/flashed and the OTA completion. Confirm Native API connection is stable in live device logs. Avoid deleting the HA integration without backing up entity IDs/history.

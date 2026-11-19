@@ -824,3 +824,54 @@ text_sensor:
     lambda: 'return id(selectro_gateway).slot_alarm_details(9);'
     update_interval: 15s
     entity_category: diagnostic
+
+  - platform: template
+    name: "IZAR 01 Decode Error"
+    lambda: 'return id(selectro_gateway).slot_decode_error(0);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 02 Decode Error"
+    lambda: 'return id(selectro_gateway).slot_decode_error(1);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 03 Decode Error"
+    lambda: 'return id(selectro_gateway).slot_decode_error(2);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 04 Decode Error"
+    lambda: 'return id(selectro_gateway).slot_decode_error(3);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 05 Decode Error"
+    lambda: 'return id(selectro_gateway).slot_decode_error(4);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 06 Decode Error"
+    lambda: 'return id(selectro_gateway).slot_decode_error(5);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 07 Decode Error"
+    lambda: 'return id(selectro_gateway).slot_decode_error(6);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 08 Decode Error"
+    lambda: 'return id(selectro_gateway).slot_decode_error(7);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 09 Decode Error"
+    lambda: 'return id(selectro_gateway).slot_decode_error(8);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 10 Decode Error"
+    lambda: 'return id(selectro_gateway).slot_decode_error(9);'
+    update_interval: 15s
+    entity_category: diagnostic
