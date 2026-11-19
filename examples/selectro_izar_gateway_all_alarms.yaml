@@ -1,0 +1,912 @@
+# Selectro IZAR Gateway v0.2 DEV — ESPHome Native API, 10 slots
+# Board ESP32-C3 + CC1101, 868.95 MHz wM-Bus T1 (R3 PRIOS).
+# This is NOT a verified full implementation of izarv2 (XMQ).
+esphome:
+  name: selectro-izar-gateway
+  friendly_name: Selectro IZAR Gateway
+  project:
+    name: selectro.izar_gateway
+    version: 0.2.0-dev
+esp32:
+  board: esp32-c3-devkitm-1
+  variant: ESP32C3
+  framework:
+    type: esp-idf
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+  level: INFO
+api:
+  encryption:
+    key: !secret api_encryption_key
+ota:
+  - platform: esphome
+    password: !secret ota_password
+# No preconfigured home SSID. NVS may retain old provisioning on a test board.
+wifi:
+  reboot_timeout: 0s
+  ap:
+    ssid: "Selectro IZAR Setup"
+    password: !secret ap_password
+    ap_timeout: 15s
+captive_portal:
+web_server:
+  port: 80
+  version: 3
+  auth:
+    username: !secret web_username
+    password: !secret web_password
+external_components:
+  - source: github://SzczepanLeon/esphome-components@01464a25c704b7c4e7e272affbd82be23568cc74
+    components: [wmbus_common, wmbus_radio]
+  # DEV: pin this to a tested commit or tag before shipping.
+  - source: github://Mikescotland/selectro-izar-esphome@main
+    components: [selectro_izar]
+spi:
+  clk_pin: GPIO4
+  miso_pin: GPIO5
+  mosi_pin: GPIO6
+wmbus_common:
+  drivers: [izar]
+selectro_izar:
+  id: selectro_gateway
+wmbus_radio:
+  radio_type: CC1101
+  cs_pin: GPIO7
+  irq_pin: GPIO2
+  frequency: 868.95MHz
+  on_frame:
+    - then:
+        - lambda: |-
+            // Mark even unknown-key frames from recognized Diehl models handled;
+            // successful decoding is reported independently by Selectro.
+            if (id(selectro_gateway).handle_packet(frame->data(), frame->rssi()))
+              frame->mark_as_handled();
+time:
+  - platform: sntp
+    id: selectro_clock
+
+sensor:
+  - platform: template
+    name: "IZAR 01 Total"
+    lambda: 'return id(selectro_gateway).slot_total(0);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    device_class: water
+    state_class: total_increasing
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 01 Previous Month"
+    lambda: 'return id(selectro_gateway).slot_target(0);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 01 RSSI"
+    lambda: 'return id(selectro_gateway).slot_rssi(0);'
+    update_interval: 15s
+    unit_of_measurement: "dBm"
+    device_class: signal_strength
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 01 Battery life"
+    lambda: 'return id(selectro_gateway).slot_battery(0);'
+    update_interval: 15s
+    unit_of_measurement: "y"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 01 Last telegram age"
+    lambda: 'return id(selectro_gateway).slot_age_s(0);'
+    update_interval: 15s
+    unit_of_measurement: "s"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 01 Alarm mask"
+    lambda: 'return id(selectro_gateway).slot_alarm_mask(0);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 02 Total"
+    lambda: 'return id(selectro_gateway).slot_total(1);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    device_class: water
+    state_class: total_increasing
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 02 Previous Month"
+    lambda: 'return id(selectro_gateway).slot_target(1);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 02 RSSI"
+    lambda: 'return id(selectro_gateway).slot_rssi(1);'
+    update_interval: 15s
+    unit_of_measurement: "dBm"
+    device_class: signal_strength
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 02 Battery life"
+    lambda: 'return id(selectro_gateway).slot_battery(1);'
+    update_interval: 15s
+    unit_of_measurement: "y"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 02 Last telegram age"
+    lambda: 'return id(selectro_gateway).slot_age_s(1);'
+    update_interval: 15s
+    unit_of_measurement: "s"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 02 Alarm mask"
+    lambda: 'return id(selectro_gateway).slot_alarm_mask(1);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 03 Total"
+    lambda: 'return id(selectro_gateway).slot_total(2);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    device_class: water
+    state_class: total_increasing
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 03 Previous Month"
+    lambda: 'return id(selectro_gateway).slot_target(2);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 03 RSSI"
+    lambda: 'return id(selectro_gateway).slot_rssi(2);'
+    update_interval: 15s
+    unit_of_measurement: "dBm"
+    device_class: signal_strength
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 03 Battery life"
+    lambda: 'return id(selectro_gateway).slot_battery(2);'
+    update_interval: 15s
+    unit_of_measurement: "y"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 03 Last telegram age"
+    lambda: 'return id(selectro_gateway).slot_age_s(2);'
+    update_interval: 15s
+    unit_of_measurement: "s"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 03 Alarm mask"
+    lambda: 'return id(selectro_gateway).slot_alarm_mask(2);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 04 Total"
+    lambda: 'return id(selectro_gateway).slot_total(3);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    device_class: water
+    state_class: total_increasing
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 04 Previous Month"
+    lambda: 'return id(selectro_gateway).slot_target(3);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 04 RSSI"
+    lambda: 'return id(selectro_gateway).slot_rssi(3);'
+    update_interval: 15s
+    unit_of_measurement: "dBm"
+    device_class: signal_strength
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 04 Battery life"
+    lambda: 'return id(selectro_gateway).slot_battery(3);'
+    update_interval: 15s
+    unit_of_measurement: "y"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 04 Last telegram age"
+    lambda: 'return id(selectro_gateway).slot_age_s(3);'
+    update_interval: 15s
+    unit_of_measurement: "s"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 04 Alarm mask"
+    lambda: 'return id(selectro_gateway).slot_alarm_mask(3);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 05 Total"
+    lambda: 'return id(selectro_gateway).slot_total(4);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    device_class: water
+    state_class: total_increasing
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 05 Previous Month"
+    lambda: 'return id(selectro_gateway).slot_target(4);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 05 RSSI"
+    lambda: 'return id(selectro_gateway).slot_rssi(4);'
+    update_interval: 15s
+    unit_of_measurement: "dBm"
+    device_class: signal_strength
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 05 Battery life"
+    lambda: 'return id(selectro_gateway).slot_battery(4);'
+    update_interval: 15s
+    unit_of_measurement: "y"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 05 Last telegram age"
+    lambda: 'return id(selectro_gateway).slot_age_s(4);'
+    update_interval: 15s
+    unit_of_measurement: "s"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 05 Alarm mask"
+    lambda: 'return id(selectro_gateway).slot_alarm_mask(4);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 06 Total"
+    lambda: 'return id(selectro_gateway).slot_total(5);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    device_class: water
+    state_class: total_increasing
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 06 Previous Month"
+    lambda: 'return id(selectro_gateway).slot_target(5);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 06 RSSI"
+    lambda: 'return id(selectro_gateway).slot_rssi(5);'
+    update_interval: 15s
+    unit_of_measurement: "dBm"
+    device_class: signal_strength
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 06 Battery life"
+    lambda: 'return id(selectro_gateway).slot_battery(5);'
+    update_interval: 15s
+    unit_of_measurement: "y"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 06 Last telegram age"
+    lambda: 'return id(selectro_gateway).slot_age_s(5);'
+    update_interval: 15s
+    unit_of_measurement: "s"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 06 Alarm mask"
+    lambda: 'return id(selectro_gateway).slot_alarm_mask(5);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 07 Total"
+    lambda: 'return id(selectro_gateway).slot_total(6);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    device_class: water
+    state_class: total_increasing
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 07 Previous Month"
+    lambda: 'return id(selectro_gateway).slot_target(6);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 07 RSSI"
+    lambda: 'return id(selectro_gateway).slot_rssi(6);'
+    update_interval: 15s
+    unit_of_measurement: "dBm"
+    device_class: signal_strength
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 07 Battery life"
+    lambda: 'return id(selectro_gateway).slot_battery(6);'
+    update_interval: 15s
+    unit_of_measurement: "y"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 07 Last telegram age"
+    lambda: 'return id(selectro_gateway).slot_age_s(6);'
+    update_interval: 15s
+    unit_of_measurement: "s"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 07 Alarm mask"
+    lambda: 'return id(selectro_gateway).slot_alarm_mask(6);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 08 Total"
+    lambda: 'return id(selectro_gateway).slot_total(7);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    device_class: water
+    state_class: total_increasing
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 08 Previous Month"
+    lambda: 'return id(selectro_gateway).slot_target(7);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 08 RSSI"
+    lambda: 'return id(selectro_gateway).slot_rssi(7);'
+    update_interval: 15s
+    unit_of_measurement: "dBm"
+    device_class: signal_strength
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 08 Battery life"
+    lambda: 'return id(selectro_gateway).slot_battery(7);'
+    update_interval: 15s
+    unit_of_measurement: "y"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 08 Last telegram age"
+    lambda: 'return id(selectro_gateway).slot_age_s(7);'
+    update_interval: 15s
+    unit_of_measurement: "s"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 08 Alarm mask"
+    lambda: 'return id(selectro_gateway).slot_alarm_mask(7);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 09 Total"
+    lambda: 'return id(selectro_gateway).slot_total(8);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    device_class: water
+    state_class: total_increasing
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 09 Previous Month"
+    lambda: 'return id(selectro_gateway).slot_target(8);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 09 RSSI"
+    lambda: 'return id(selectro_gateway).slot_rssi(8);'
+    update_interval: 15s
+    unit_of_measurement: "dBm"
+    device_class: signal_strength
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 09 Battery life"
+    lambda: 'return id(selectro_gateway).slot_battery(8);'
+    update_interval: 15s
+    unit_of_measurement: "y"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 09 Last telegram age"
+    lambda: 'return id(selectro_gateway).slot_age_s(8);'
+    update_interval: 15s
+    unit_of_measurement: "s"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 09 Alarm mask"
+    lambda: 'return id(selectro_gateway).slot_alarm_mask(8);'
+    update_interval: 15s
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 10 Total"
+    lambda: 'return id(selectro_gateway).slot_total(9);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    device_class: water
+    state_class: total_increasing
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 10 Previous Month"
+    lambda: 'return id(selectro_gateway).slot_target(9);'
+    update_interval: 15s
+    unit_of_measurement: "m³"
+    accuracy_decimals: 3
+  - platform: template
+    name: "IZAR 10 RSSI"
+    lambda: 'return id(selectro_gateway).slot_rssi(9);'
+    update_interval: 15s
+    unit_of_measurement: "dBm"
+    device_class: signal_strength
+    state_class: measurement
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 10 Battery life"
+    lambda: 'return id(selectro_gateway).slot_battery(9);'
+    update_interval: 15s
+    unit_of_measurement: "y"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 10 Last telegram age"
+    lambda: 'return id(selectro_gateway).slot_age_s(9);'
+    update_interval: 15s
+    unit_of_measurement: "s"
+    entity_category: diagnostic
+  - platform: template
+    name: "IZAR 10 Alarm mask"
+    lambda: 'return id(selectro_gateway).slot_alarm_mask(9);'
+    update_interval: 15s
+    entity_category: diagnostic
+
+binary_sensor:
+  - platform: template
+    name: "IZAR 01 Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::LEAKAGE);'
+  - platform: template
+    name: "IZAR 01 Prev Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::PREV_LEAKAGE);'
+  - platform: template
+    name: "IZAR 01 Meter Blocked"
+    lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::METER_BLOCKED);'
+  - platform: template
+    name: "IZAR 01 Back Flow"
+    lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::BACK_FLOW);'
+  - platform: template
+    name: "IZAR 01 Underflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::UNDERFLOW);'
+  - platform: template
+    name: "IZAR 01 Overflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::OVERFLOW);'
+  - platform: template
+    name: "IZAR 01 Submarine"
+    lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::SUBMARINE);'
+  - platform: template
+    name: "IZAR 01 Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 01 Prev Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::PREV_SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 01 Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 01 Prev Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(0, esphome::selectro_izar::PREV_MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 02 Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::LEAKAGE);'
+  - platform: template
+    name: "IZAR 02 Prev Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::PREV_LEAKAGE);'
+  - platform: template
+    name: "IZAR 02 Meter Blocked"
+    lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::METER_BLOCKED);'
+  - platform: template
+    name: "IZAR 02 Back Flow"
+    lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::BACK_FLOW);'
+  - platform: template
+    name: "IZAR 02 Underflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::UNDERFLOW);'
+  - platform: template
+    name: "IZAR 02 Overflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::OVERFLOW);'
+  - platform: template
+    name: "IZAR 02 Submarine"
+    lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::SUBMARINE);'
+  - platform: template
+    name: "IZAR 02 Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 02 Prev Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::PREV_SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 02 Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 02 Prev Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(1, esphome::selectro_izar::PREV_MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 03 Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::LEAKAGE);'
+  - platform: template
+    name: "IZAR 03 Prev Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::PREV_LEAKAGE);'
+  - platform: template
+    name: "IZAR 03 Meter Blocked"
+    lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::METER_BLOCKED);'
+  - platform: template
+    name: "IZAR 03 Back Flow"
+    lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::BACK_FLOW);'
+  - platform: template
+    name: "IZAR 03 Underflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::UNDERFLOW);'
+  - platform: template
+    name: "IZAR 03 Overflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::OVERFLOW);'
+  - platform: template
+    name: "IZAR 03 Submarine"
+    lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::SUBMARINE);'
+  - platform: template
+    name: "IZAR 03 Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 03 Prev Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::PREV_SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 03 Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 03 Prev Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(2, esphome::selectro_izar::PREV_MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 04 Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::LEAKAGE);'
+  - platform: template
+    name: "IZAR 04 Prev Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::PREV_LEAKAGE);'
+  - platform: template
+    name: "IZAR 04 Meter Blocked"
+    lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::METER_BLOCKED);'
+  - platform: template
+    name: "IZAR 04 Back Flow"
+    lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::BACK_FLOW);'
+  - platform: template
+    name: "IZAR 04 Underflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::UNDERFLOW);'
+  - platform: template
+    name: "IZAR 04 Overflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::OVERFLOW);'
+  - platform: template
+    name: "IZAR 04 Submarine"
+    lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::SUBMARINE);'
+  - platform: template
+    name: "IZAR 04 Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 04 Prev Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::PREV_SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 04 Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 04 Prev Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(3, esphome::selectro_izar::PREV_MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 05 Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::LEAKAGE);'
+  - platform: template
+    name: "IZAR 05 Prev Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::PREV_LEAKAGE);'
+  - platform: template
+    name: "IZAR 05 Meter Blocked"
+    lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::METER_BLOCKED);'
+  - platform: template
+    name: "IZAR 05 Back Flow"
+    lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::BACK_FLOW);'
+  - platform: template
+    name: "IZAR 05 Underflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::UNDERFLOW);'
+  - platform: template
+    name: "IZAR 05 Overflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::OVERFLOW);'
+  - platform: template
+    name: "IZAR 05 Submarine"
+    lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::SUBMARINE);'
+  - platform: template
+    name: "IZAR 05 Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 05 Prev Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::PREV_SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 05 Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 05 Prev Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(4, esphome::selectro_izar::PREV_MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 06 Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::LEAKAGE);'
+  - platform: template
+    name: "IZAR 06 Prev Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::PREV_LEAKAGE);'
+  - platform: template
+    name: "IZAR 06 Meter Blocked"
+    lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::METER_BLOCKED);'
+  - platform: template
+    name: "IZAR 06 Back Flow"
+    lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::BACK_FLOW);'
+  - platform: template
+    name: "IZAR 06 Underflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::UNDERFLOW);'
+  - platform: template
+    name: "IZAR 06 Overflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::OVERFLOW);'
+  - platform: template
+    name: "IZAR 06 Submarine"
+    lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::SUBMARINE);'
+  - platform: template
+    name: "IZAR 06 Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 06 Prev Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::PREV_SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 06 Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 06 Prev Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(5, esphome::selectro_izar::PREV_MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 07 Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::LEAKAGE);'
+  - platform: template
+    name: "IZAR 07 Prev Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::PREV_LEAKAGE);'
+  - platform: template
+    name: "IZAR 07 Meter Blocked"
+    lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::METER_BLOCKED);'
+  - platform: template
+    name: "IZAR 07 Back Flow"
+    lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::BACK_FLOW);'
+  - platform: template
+    name: "IZAR 07 Underflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::UNDERFLOW);'
+  - platform: template
+    name: "IZAR 07 Overflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::OVERFLOW);'
+  - platform: template
+    name: "IZAR 07 Submarine"
+    lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::SUBMARINE);'
+  - platform: template
+    name: "IZAR 07 Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 07 Prev Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::PREV_SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 07 Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 07 Prev Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(6, esphome::selectro_izar::PREV_MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 08 Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::LEAKAGE);'
+  - platform: template
+    name: "IZAR 08 Prev Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::PREV_LEAKAGE);'
+  - platform: template
+    name: "IZAR 08 Meter Blocked"
+    lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::METER_BLOCKED);'
+  - platform: template
+    name: "IZAR 08 Back Flow"
+    lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::BACK_FLOW);'
+  - platform: template
+    name: "IZAR 08 Underflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::UNDERFLOW);'
+  - platform: template
+    name: "IZAR 08 Overflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::OVERFLOW);'
+  - platform: template
+    name: "IZAR 08 Submarine"
+    lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::SUBMARINE);'
+  - platform: template
+    name: "IZAR 08 Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 08 Prev Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::PREV_SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 08 Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 08 Prev Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(7, esphome::selectro_izar::PREV_MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 09 Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::LEAKAGE);'
+  - platform: template
+    name: "IZAR 09 Prev Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::PREV_LEAKAGE);'
+  - platform: template
+    name: "IZAR 09 Meter Blocked"
+    lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::METER_BLOCKED);'
+  - platform: template
+    name: "IZAR 09 Back Flow"
+    lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::BACK_FLOW);'
+  - platform: template
+    name: "IZAR 09 Underflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::UNDERFLOW);'
+  - platform: template
+    name: "IZAR 09 Overflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::OVERFLOW);'
+  - platform: template
+    name: "IZAR 09 Submarine"
+    lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::SUBMARINE);'
+  - platform: template
+    name: "IZAR 09 Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 09 Prev Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::PREV_SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 09 Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 09 Prev Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(8, esphome::selectro_izar::PREV_MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 10 Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::LEAKAGE);'
+  - platform: template
+    name: "IZAR 10 Prev Leakage"
+    lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::PREV_LEAKAGE);'
+  - platform: template
+    name: "IZAR 10 Meter Blocked"
+    lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::METER_BLOCKED);'
+  - platform: template
+    name: "IZAR 10 Back Flow"
+    lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::BACK_FLOW);'
+  - platform: template
+    name: "IZAR 10 Underflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::UNDERFLOW);'
+  - platform: template
+    name: "IZAR 10 Overflow"
+    lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::OVERFLOW);'
+  - platform: template
+    name: "IZAR 10 Submarine"
+    lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::SUBMARINE);'
+  - platform: template
+    name: "IZAR 10 Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 10 Prev Sensor Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::PREV_SENSOR_FRAUD);'
+  - platform: template
+    name: "IZAR 10 Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::MECHANICAL_FRAUD);'
+  - platform: template
+    name: "IZAR 10 Prev Mechanical Fraud"
+    lambda: 'return id(selectro_gateway).slot_alarm(9, esphome::selectro_izar::PREV_MECHANICAL_FRAUD);'
+
+text_sensor:
+  - platform: template
+    name: "IZAR 01 Status"
+    lambda: 'return id(selectro_gateway).slot_status(0);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 01 Radio ID"
+    lambda: 'return id(selectro_gateway).slot_id(0);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 01 Printed ID"
+    lambda: 'return id(selectro_gateway).slot_printed(0);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 02 Status"
+    lambda: 'return id(selectro_gateway).slot_status(1);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 02 Radio ID"
+    lambda: 'return id(selectro_gateway).slot_id(1);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 02 Printed ID"
+    lambda: 'return id(selectro_gateway).slot_printed(1);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 03 Status"
+    lambda: 'return id(selectro_gateway).slot_status(2);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 03 Radio ID"
+    lambda: 'return id(selectro_gateway).slot_id(2);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 03 Printed ID"
+    lambda: 'return id(selectro_gateway).slot_printed(2);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 04 Status"
+    lambda: 'return id(selectro_gateway).slot_status(3);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 04 Radio ID"
+    lambda: 'return id(selectro_gateway).slot_id(3);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 04 Printed ID"
+    lambda: 'return id(selectro_gateway).slot_printed(3);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 05 Status"
+    lambda: 'return id(selectro_gateway).slot_status(4);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 05 Radio ID"
+    lambda: 'return id(selectro_gateway).slot_id(4);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 05 Printed ID"
+    lambda: 'return id(selectro_gateway).slot_printed(4);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 06 Status"
+    lambda: 'return id(selectro_gateway).slot_status(5);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 06 Radio ID"
+    lambda: 'return id(selectro_gateway).slot_id(5);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 06 Printed ID"
+    lambda: 'return id(selectro_gateway).slot_printed(5);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 07 Status"
+    lambda: 'return id(selectro_gateway).slot_status(6);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 07 Radio ID"
+    lambda: 'return id(selectro_gateway).slot_id(6);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 07 Printed ID"
+    lambda: 'return id(selectro_gateway).slot_printed(6);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 08 Status"
+    lambda: 'return id(selectro_gateway).slot_status(7);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 08 Radio ID"
+    lambda: 'return id(selectro_gateway).slot_id(7);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 08 Printed ID"
+    lambda: 'return id(selectro_gateway).slot_printed(7);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 09 Status"
+    lambda: 'return id(selectro_gateway).slot_status(8);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 09 Radio ID"
+    lambda: 'return id(selectro_gateway).slot_id(8);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 09 Printed ID"
+    lambda: 'return id(selectro_gateway).slot_printed(8);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 10 Status"
+    lambda: 'return id(selectro_gateway).slot_status(9);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 10 Radio ID"
+    lambda: 'return id(selectro_gateway).slot_id(9);'
+    update_interval: 15s
+  - platform: template
+    name: "IZAR 10 Printed ID"
+    lambda: 'return id(selectro_gateway).slot_printed(9);'
+    update_interval: 15s
