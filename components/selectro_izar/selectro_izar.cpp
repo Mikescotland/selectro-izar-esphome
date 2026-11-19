@@ -12,6 +12,7 @@ static const char *TAG = "selectro_izar";
 static constexpr uint32_t CONFIG_MAGIC=0x53495A47u; // 'SIZG'
 static constexpr uint32_t CONFIG_VERSION=1u;
 static constexpr uint32_t STALE_MS=30u*60u*1000u;
+static constexpr uint32_t FLOW_STALE_MS=3u*60u*1000u;
 
 uint32_t Gateway::checksum_(const Storage &s) {
   const auto *p=reinterpret_cast<const uint8_t*>(&s);
@@ -80,8 +81,12 @@ bool Gateway::handle_packet(const std::vector<uint8_t> &frame,int8_t rssi) {
       if((uint32_t)(now-x.seen_ms)>(uint32_t)(now-oldest->seen_ms))oldest=&x;
     }
     if(!slot)slot=empty?empty:oldest;
+    FlowEstimator flow;
+    if (slot->id==id) flow=slot->flow;
+    if (r.valid) flow.observe(r.total_l,now);
     *slot=Found{};
     slot->id=id;slot->rssi=rssi;slot->seen_ms=now;
+    slot->flow=flow;
     if(!r.printed_number.empty())
       std::snprintf(slot->printed,sizeof(slot->printed),"%s",r.printed_number.c_str());
     slot->valid=r.valid;
@@ -105,6 +110,14 @@ optional<float> Gateway::slot_total(unsigned i) const {
   const auto *f=find_unsafe_(cfg_.slots[i].id);
   if(!f || !f->valid || (uint32_t)(millis()-f->seen_ms)>STALE_MS)return {};
   return f->total_l/1000.f;
+}
+optional<float> Gateway::slot_flow(unsigned i) const {
+  std::lock_guard<std::mutex> lk(mutex_);
+  if(i>=MAX_SLOTS)return {};
+  const auto *f=find_unsafe_(cfg_.slots[i].id);
+  if(!f || !f->valid || !f->flow.ready() ||
+     (uint32_t)(millis()-f->seen_ms)>FLOW_STALE_MS) return {};
+  return f->flow.rate_lph();
 }
 optional<float> Gateway::slot_target(unsigned i) const {
   std::lock_guard<std::mutex> lk(mutex_);
@@ -161,6 +174,13 @@ optional<bool> Gateway::slot_leak(unsigned i) const {
   if(!f || !f->valid || (uint32_t)(millis()-f->seen_ms)>STALE_MS)return {};
   return bool(f->flags&LEAKAGE);
 }
+optional<bool> Gateway::slot_stale(unsigned i) const {
+  std::lock_guard<std::mutex> lk(mutex_);
+  if(i>=MAX_SLOTS || !cfg_.slots[i].id)return {};
+  const auto *f=find_unsafe_(cfg_.slots[i].id);
+  if(!f || !f->valid)return true;
+  return (uint32_t)(millis()-f->seen_ms)>STALE_MS;
+}
 std::string Gateway::slot_status(unsigned i) const {
   std::lock_guard<std::mutex> lk(mutex_);
   if(i>=MAX_SLOTS || !cfg_.slots[i].id)return "UNASSIGNED";
@@ -169,6 +189,16 @@ std::string Gateway::slot_status(unsigned i) const {
   if((uint32_t)(millis()-f->seen_ms)>STALE_MS)return "STALE";
   if(!f->valid)return "UNDECODABLE";
   IzarReading r;r.valid=true;r.alarms=f->flags;r.general_alarm=f->general_alarm;
+  return alarms_text(r);
+}
+std::string Gateway::slot_alarm_details(unsigned i) const {
+  std::lock_guard<std::mutex> lk(mutex_);
+  if(i>=MAX_SLOTS || !cfg_.slots[i].id)return "UNASSIGNED";
+  const auto *f=find_unsafe_(cfg_.slots[i].id);
+  if(!f)return "WAITING_FOR_TELEGRAM";
+  if((uint32_t)(millis()-f->seen_ms)>STALE_MS)return "STALE";
+  if(!f->valid)return "UNDECODABLE";
+  IzarReading r; r.valid=true; r.alarms=f->flags; r.general_alarm=f->general_alarm;
   return alarms_text(r);
 }
 std::string Gateway::slot_id(unsigned i) const {
@@ -210,7 +240,14 @@ std::string Gateway::state_json_() const {
       key.c_str(),int(f.rssi),(uint32_t)(now-f.seen_ms)/1000u,f.valid?"true":"false");
     j+=b;
     if(f.valid){std::snprintf(b,sizeof(b),"%.3f",f.total_l/1000.0);j+=b;}else j+="null";
+    j+=",\"flow_l_h\":";
+    if(f.valid && f.flow.ready() && (uint32_t)(now-f.seen_ms)<=FLOW_STALE_MS) {
+      std::snprintf(b,sizeof(b),"%.1f",double(f.flow.rate_lph()));j+=b;
+    } else j+="null";
+    j+=",\"leak_alarm\":";
+    if(f.valid)j+=(f.flags&LEAKAGE)?"true":"false";else j+="null";
     j+=",\"printed\":\""+escape_json_(f.printed)+"\",\"target_m3\":";
+
     if(f.valid && f.has_target){std::snprintf(b,sizeof(b),"%.3f",f.target_l/1000.0);j+=b;}else j+="null";
     IzarReading r;r.valid=f.valid;r.alarms=f.flags;r.general_alarm=f.general_alarm;
     j+=",\"status\":\""+escape_json_(alarms_text(r).c_str())+"\",\"decoder\":\""+
@@ -226,6 +263,28 @@ std::string Gateway::state_json_() const {
     if(f && f->valid && (uint32_t)(now-f->seen_ms)<STALE_MS) {
       std::snprintf(b,sizeof(b),"%.3f",f->total_l/1000.0);j+=b;
     }else j+="null";
+    j+=",\"flow_l_h\":";
+    if(f && f->valid && f->flow.ready() && (uint32_t)(now-f->seen_ms)<=FLOW_STALE_MS) {
+      std::snprintf(b,sizeof(b),"%.1f",double(f->flow.rate_lph()));j+=b;
+    } else j+="null";
+    j+=",\"stale\":";
+    if(!s.id) j+="null";
+    else j+=(!f || !f->valid || (uint32_t)(now-f->seen_ms)>STALE_MS)?"true":"false";
+    j+=",\"printed\":\""+escape_json_(f?f->printed:"")+"\"";
+    j+=",\"alarm_details\":\"";
+    if(!s.id) j+="UNASSIGNED";
+    else if(!f) j+="WAITING_FOR_TELEGRAM";
+    else if((uint32_t)(now-f->seen_ms)>STALE_MS) j+="STALE";
+    else if(!f->valid) j+="UNDECODABLE";
+    else {
+      IzarReading r; r.valid=true; r.alarms=f->flags; r.general_alarm=f->general_alarm;
+      j+=escape_json_(alarms_text(r).c_str());
+    }
+    j+="\"";
+    j+=",\"leak_alarm\":";
+    if(f && f->valid && (uint32_t)(now-f->seen_ms)<=STALE_MS)
+      j+=(f->flags&LEAKAGE)?"true":"false";
+    else j+="null";
     j+="}";
   }
   j+="]}";

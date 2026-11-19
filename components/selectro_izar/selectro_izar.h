@@ -10,6 +10,7 @@
 #include "esphome/core/preferences.h"
 #include "esphome/components/web_server_base/web_server_base.h"
 #include "izar_decoder.h"
+#include "flow_estimator.h"
 
 namespace esphome { namespace selectro_izar {
 
@@ -27,6 +28,7 @@ class Gateway final : public Component, public AsyncWebHandler {
   bool handle_packet(const std::vector<uint8_t> &frame, int8_t rssi);
 
   optional<float> slot_total(unsigned i) const;
+  optional<float> slot_flow(unsigned i) const;
   optional<float> slot_target(unsigned i) const;
   optional<float> slot_rssi(unsigned i) const;
   optional<float> slot_battery(unsigned i) const;
@@ -35,7 +37,9 @@ class Gateway final : public Component, public AsyncWebHandler {
   optional<bool> slot_alarm(unsigned i, uint16_t mask) const;
   std::string slot_printed(unsigned i) const;
   optional<bool> slot_leak(unsigned i) const;
+  optional<bool> slot_stale(unsigned i) const;
   std::string slot_status(unsigned i) const;
+  std::string slot_alarm_details(unsigned i) const;
   std::string slot_id(unsigned i) const;
 
   bool canHandle(AsyncWebServerRequest *request) const override;
@@ -63,6 +67,7 @@ class Gateway final : public Component, public AsyncWebHandler {
     bool has_target{false};
     float battery_y{0};
     uint16_t flags{0};
+    FlowEstimator flow{};
     bool general_alarm{false};
     char decoder[19]{};
     char error[57]{};
