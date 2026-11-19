@@ -1,0 +1,10 @@
+secrets.yaml
+*.bin
+*.elf
+*.map
+*.pio
+.esphome/
+__pycache__/
+*.pyc
+tests/test_decoder
+.DS_Store
